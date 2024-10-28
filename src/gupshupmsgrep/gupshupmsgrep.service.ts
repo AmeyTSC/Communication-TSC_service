@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 import * as dotenv from 'dotenv';
-import { Gupshuprephooks } from 'src/Services/gupshup_poll.service';
 dotenv.config({ path: process.cwd() + '/.env' });
 
 @Injectable()
 export class GupshupmsgrepService {
   private sqsClient: SQSClient;
   private QUEUE_URL: string;
-  constructor(private readonly gupshuppoll:Gupshuprephooks) {
+  constructor() {
     this.sqsClient = new SQSClient({
       region: process.env.AWS_REGION,
       credentials: {
@@ -30,7 +29,6 @@ export class GupshupmsgrepService {
     };
     try {
       const command = new SendMessageCommand(params);
-      await this.gupshuppoll.startPolling();
       await this.sqsClient.send(command);
       return {
         statusCode: 200,

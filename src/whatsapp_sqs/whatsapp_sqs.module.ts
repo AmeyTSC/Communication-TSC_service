@@ -4,7 +4,6 @@ import { WhatsappSqsService } from './whatsapp_sqs.service';
 import { whatsapp_logs,WhatsapplogSchema } from '../Schema/whatsapp_logs.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { WhatsappLogService } from '../Services/whatsapp-logcreate.service';
-import { WhatsappSqsPollingService } from '../Services/sqs_polling.service';
 import { WhatsappTrigger } from 'src/Services/whatsapphit_error_logs.service';
 import { WhatsappStatusService } from '../Services/whatsapp_status.service';
 import { WhatsAppHitLog,WhatsAppHitLogSchema } from 'src/Schema/whatsapp_hits.schema';
@@ -21,6 +20,6 @@ import { WhatsAppErrorLog, WhatsAppErrorLogSchema } from 'src/Schema/whatsapp_er
   ])
 ],
   controllers: [WhatsappSqsController],
-  providers: [WhatsappSqsService,WhatsappLogService,WhatsappSqsPollingService,WhatsappTrigger,WhatsappStatusService]
+  providers: [WhatsappSqsService,WhatsappLogService,WhatsappTrigger,WhatsappStatusService]
 })
 export class WhatsappSqsModule {}

@@ -1,0 +1,322 @@
+org: rohittesting9821
+
+service: notificationService
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-south-1
+  stage: ${opt:stage, 'dev'}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - sqs:SendMessage
+      Resource:
+        - Fn::GetAtt:
+            - whatsappcreateorder
+            - Arn
+        - Fn::GetAtt:
+            - emailcreateorder
+            - Arn
+        - Fn::GetAtt:
+            - smscreateorder
+            - Arn
+        - Fn::GetAtt:
+            - whatsappreportwebhook
+            - Arn
+        - Fn::GetAtt:
+            - emailreportwebhook
+            - Arn
+        - Fn::GetAtt:
+            - smsreportwebhook
+            - Arn
+  apiGateway:
+    shouldStartNameWithService: true
+    apiKeys:
+      - ${self:service}-${self:provider.stage}-api-key
+  # metrics: true
+
+functions:
+  notification_whatsapp_sms:
+    handler: src/controller/whatsappstatuscheck.whatsapp_status_check //pending
+    events:
+      - http:
+          path: whatsapp/checkstatus
+          method: get
+          cors: true
+
+  notification_whatsappmsg:
+    handler: src/controller/whatsapp.whatsapp_sms // dist
+    events:
+      - http:
+          path: whatsappsms/send
+          method: post
+          cors: true
+
+  notification_dynamodb_trigger:
+    handler: src/controller/dynamo_trigger_whatsapp.whatsappmsg //dist
+    events:
+      - http:
+          path: whatsapp-sqs/send
+          method: post
+          cors: true
+
+  notification_dynamodb_webhook:
+    handler: src/controller/dynamo_whatsapp_trigger.triggerTest //done
+    timeout: 300
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - whatsappcreateorder
+              - Arn
+          batchSize: 1
+
+notification_whatsapp_logs:
+  handler: src/controller/getwhatsapplogs.whatappLogs
+  timeout: 300
+  events:
+    - http:
+        path: logs
+        method: get
+        cors: true
+
+  notification_whatsapp_report_logs:
+    handler: src/controller/whatsapp_ragebase_report.whatapprangeLogs //Pending
+    timeout: 300
+    events:
+      - http:
+          path: logs/range
+          method: get
+          cors: true
+
+  notification_sms_logs:
+    handler: src/controller/smslogs.report
+    timeout: 300
+    events:
+      - schedule: cron(30 4 * * ? *)
+      # - schedule: cron(0 10 * * ? *)
+      # - schedule: cron(*/1 * * * ? *)
+      - http:
+          path: /notification/dailyreport
+          method: get
+          cors: true
+
+  notification_smsrangebase_logs:
+    handler: src/controller/smslog_ragebase.smsranageLogs
+    timeout: 300
+    events:
+      - http:
+          path: /notification/smsrangelogs
+          method: get
+          cors: true
+
+  notification_emailreport_logs:
+    handler: src/controller/emaillogs.emailLogs
+    timeout: 300
+    events:
+      - http:
+          path: /notification/emaillogs
+          method: get
+          cors: true
+
+  notification_emailrange_report_logs:
+    handler: src/controller/email_rangelogs.emailrangeLogs
+    timeout: 300
+    events:
+      - http:
+          path: /notification/emailrangelogs
+          method: get
+          cors: true
+
+  notification_export_data:
+    handler: src/controller/export_data.exportDataFromDynamoDB
+    timeout: 300
+    events:
+      - http:
+          path: /notification/export_data
+          method: get
+          cors: true
+
+  notification_whatsapp_cron:
+    handler: src/controller/resendwhatsappmessage.resentwhatsapp //pending
+    timeout: 300
+    events:
+      # - schedule: cron(*/30 * * * ? *)
+      - http:
+          path: resendwhatsapp
+          method: post
+          cors: true
+
+  gupshup_report_status:
+    handler: src/controller/gupshupMsgReport.gupshupRepor
+    events:
+      - http:
+          path: gupshupmsgrep
+          method: post
+          cors: true
+
+  gupshup_webhook:
+    handler: src/controller/gupshupupdatestatus.gupshupreportwebhook
+    timeout: 300
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - whatsappreportwebhook
+              - Arn
+          batchSize: 1
+
+  notification_sms:
+    handler: src/controller/sms.sms
+    events:
+      - http:
+          path: /send_sms
+
+          method: post
+          cors: true
+
+  notification_sms_sqs:
+    handler: src/controller/sms_trigger.smsSqs
+    timeout: 300
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - smscreateorder
+              - Arn
+          batchSize: 1
+
+  notification_sms_vialogueSms:
+    handler: src/controller/smsStatuscheck.vialogueSms
+    timeout: 300
+    events:
+      - http:
+          path: /vialogue_sms
+          method: get
+          cors: true
+          private: false
+
+  sms_webhook:
+    handler: src/controller/smsupdatestatus.smsreportwebhook
+    timeout: 300
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - smsreportwebhook
+              - Arn
+          batchSize: 1
+
+  notification_email_sparkpost:
+    handler: src/controller/emailstatuscheck.sparkport
+    timeout: 300
+    events:
+      - http:
+          path: /sparkportreport
+          method: post
+          cors: true
+          private: false
+
+  email_webhook:
+    handler: src/controller/emailupdatestatus.emailreportwebhook
+    timeout: 300
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - emailreportwebhook
+              - Arn
+          batchSize: 1
+
+  notification_templatehits:
+    handler: src/controller/templatehitreport.templateHits
+    timeout: 300
+    events:
+      - http:
+          path: /template_hits
+          method: post
+          cors: true
+          private: false
+
+  notification_email:
+    handler: src/controller/dynamo_trigger_email.emailEntry
+    events:
+      - http:
+          path: /email
+          method: post
+          cors: true
+          private: false
+
+  notification_emailSend:
+    handler: src/controller/email.emailSend
+    events:
+      - http:
+          path: /email_send
+          method: post
+          cors: true
+          private: false
+
+  notification_email_webhook:
+    handler: src/controller/sqs_email.emailTrigger
+    timeout: 300
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - emailcreateorder
+              - Arn
+          batchSize: 1
+
+custom:
+  serverless-offline:
+    httpPort: 3001
+    host: 0.0.0.0
+
+plugins:
+  - serverless-offline
+  - serverless-dotenv-plugin
+
+resources:
+  Resources:
+    whatsappcreateorder:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: whatsapp-createorder-${self:provider.stage}
+        DelaySeconds: 300
+        VisibilityTimeout: 300
+
+    emailcreateorder:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: email-createorder-${self:provider.stage}
+        DelaySeconds: 300
+        VisibilityTimeout: 300
+
+    smscreateorder:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: sms-createorder-${self:provider.stage}
+        DelaySeconds: 5
+        VisibilityTimeout: 300
+
+    whatsappreportwebhook:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: whatsapp-report-${self:provider.stage}
+        DelaySeconds: 120
+        VisibilityTimeout: 300
+
+    emailreportwebhook:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: email-report-${self:provider.stage}
+        DelaySeconds: 120
+        VisibilityTimeout: 300
+
+    smsreportwebhook:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: sms-report-${self:provider.stage}
+        DelaySeconds: 120
+        VisibilityTimeout: 300

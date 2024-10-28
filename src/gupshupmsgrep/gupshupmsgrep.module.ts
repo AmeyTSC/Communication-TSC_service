@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { GupshupmsgrepController } from './gupshupmsgrep.controller';
 import { GupshupmsgrepService } from './gupshupmsgrep.service';
-import { Gupshuprephooks } from 'src/Services/gupshup_poll.service';
 import { GupshupUpdateStatus } from 'src/Services/gupshupupdates.service';
 import {
   WhatsAppHitLog,
@@ -16,6 +15,6 @@ import {
     ]),
   ],
   controllers: [GupshupmsgrepController],
-  providers: [GupshupmsgrepService, Gupshuprephooks, GupshupUpdateStatus],
+  providers: [GupshupmsgrepService,GupshupUpdateStatus],
 })
 export class GupshupmsgrepModule {}
